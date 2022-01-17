@@ -1,45 +1,48 @@
 package oliveira.willy.springboot2.service;
 
+import lombok.RequiredArgsConstructor;
 import oliveira.willy.springboot2.domain.Anime;
+import oliveira.willy.springboot2.exception.BadRequestException;
+import oliveira.willy.springboot2.mapper.AnimeMapper;
+import oliveira.willy.springboot2.repository.AnimeRepository;
+import oliveira.willy.springboot2.requests.AnimePostRequestBody;
+import oliveira.willy.springboot2.requests.AnimePutRequestBody;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Service
+@RequiredArgsConstructor
 public class AnimeService {
-    private static List<Anime> animes;
-
-    static {
-        animes = new ArrayList<>(List.of(new Anime(1L, "Boku No Hero"), new Anime(2L, "Naruto")));
-    }
+    private final AnimeRepository animeRepository;
 
     public List<Anime> listAll() {
-        return animes;
+        return animeRepository.findAll();
     }
 
-    public Anime findById(long id) {
-        return animes.stream()
-                .filter(anime -> anime.getId().equals(id))
-                .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Anime not found"));
+    public List<Anime> findByName(String name) {
+        return animeRepository.findByName(name);
     }
 
-    public Anime save(Anime anime) {
-        anime.setId(ThreadLocalRandom.current().nextLong(3,1000000));
-        animes.add(anime);
-        return anime;
+    public Anime findByIdOrTrowBadRequestException(long id) {
+        return animeRepository.findById(id)
+                .orElseThrow(() -> new BadRequestException("Anime not found"));
+    }
+
+    public Anime save(AnimePostRequestBody animePostRequestBody) {
+        return animeRepository.save(AnimeMapper.INSTANCE.toAnime(animePostRequestBody));
     }
 
     public void delete(long id) {
-        animes.remove(findById(id));
+        animeRepository.delete(findByIdOrTrowBadRequestException(id));
     }
 
-    public void replace(Anime anime) {
-        delete(anime.getId());
-        animes.add(anime);
+    public void replace(AnimePutRequestBody animePutRequestBody) {
+        Anime savedAnime = findByIdOrTrowBadRequestException(animePutRequestBody.getId());
+        Anime anime = AnimeMapper.INSTANCE.toAnime(animePutRequestBody);
+        anime.setId(savedAnime.getId());
+        animeRepository.save(anime);
     }
 }
