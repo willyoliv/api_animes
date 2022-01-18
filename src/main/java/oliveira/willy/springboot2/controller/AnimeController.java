@@ -7,10 +7,13 @@ import oliveira.willy.springboot2.requests.AnimePostRequestBody;
 import oliveira.willy.springboot2.requests.AnimePutRequestBody;
 import oliveira.willy.springboot2.service.AnimeService;
 import oliveira.willy.springboot2.util.DateUtil;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,9 +26,9 @@ public class AnimeController {
     private final AnimeService animeService;
 
     @GetMapping
-    public ResponseEntity<List<Anime>> list() {
+    public ResponseEntity<Page<Anime>> list(Pageable pageable) {
         log.info(dateUtil.formatLocalDateTimeToDatabaseStyle(LocalDateTime.now()));
-        return ResponseEntity.ok(animeService.listAll());
+        return ResponseEntity.ok(animeService.listAll(pageable));
     }
 
     @GetMapping(path = "/{id}")
@@ -39,7 +42,7 @@ public class AnimeController {
     }
 
     @PostMapping
-    public ResponseEntity<Anime> save(@RequestBody AnimePostRequestBody animePostRequestBody) {
+    public ResponseEntity<Anime> save(@RequestBody @Valid AnimePostRequestBody animePostRequestBody) {
         return new ResponseEntity<>(animeService.save(animePostRequestBody), HttpStatus.CREATED);
     }
 
